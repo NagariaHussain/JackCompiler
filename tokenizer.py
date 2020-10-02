@@ -46,8 +46,8 @@ symbols = {
     "~"
 }
 
-in_stream = Path('test.jack').open('r')
-xml_out = Path('test.xml').open('w')
+in_stream = Path('tests/SquareGame.jack').open('r')
+xml_out = Path('SquareGameMT.xml').open('w')
 
 # Write XML main tag
 xml_out.write("<tokens>\n")
@@ -90,9 +90,40 @@ while cur_char:
             cur_symbol = "&gt;"
         elif cur_symbol == "&":
             cur_symbol = "&amp;"
+        
+       
+        if (cur_char == "/"):
+            # Read the character ahead
+            cur_char = in_stream.read(1)
 
-        xml_out.write(f"<symbol> {cur_symbol} </symbol>\n")
-        cur_char = in_stream.read(1)
+            # Handle inline comments
+            if (cur_char == "/"):
+                while cur_char != "\n":
+                    cur_char = in_stream.read(1)
+                continue
+
+            # Handle block comments
+            elif (cur_char == "*"):
+                cur_char = in_stream.read(1)
+                while True:
+                    while cur_char != "*":
+                        cur_char = in_stream.read(1)
+                    
+                    cur_char = in_stream.read(1)
+
+                    if cur_char == "/":
+                        cur_char = in_stream.read(1)
+                        break
+                    else:
+                        continue
+            
+            else:
+                cur_char = in_stream.read(1)
+                xml_out.write(f"<symbol> {cur_symbol} </symbol>\n")
+
+        else:
+            cur_char = in_stream.read(1)
+            xml_out.write(f"<symbol> {cur_symbol} </symbol>\n")
     
     if cur_char.isdigit():
         cur_intval = cur_char
