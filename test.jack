@@ -1,0 +1,10 @@
+// My good comment
+class BST {
+    function void main() {
+        var int i, j, k;
+
+        let i = 100;
+        let j = "hussain";
+
+    }
+}
