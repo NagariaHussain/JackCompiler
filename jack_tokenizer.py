@@ -1,6 +1,54 @@
 # Token type constants
 from type_enums import TokenType, KeywordType
 
+# Set of reserved keywords
+keywords = {
+    "class",
+    "constructor",
+    "function",
+    "method",
+    "field",
+    "static",
+    "var",
+    "int",
+    "char",
+    "boolean",
+    "void",
+    "true",
+    "false",
+    "null",
+    "this",
+    "let",
+    "do",
+    "if",
+    "else",
+    "while",
+    "return"
+}
+
+# Set of Allowed Symbols
+symbols = {
+    "{",
+    "}",
+    "(",
+    ")",
+    "[",
+    "]",
+    ".",
+    ",",
+    ";",
+    "+",
+    "-",
+    "*",
+    "/",
+    "&",
+    "|",
+    "<",
+    ">",
+    "=",
+    "~"
+}
+
 class JackTokenizer:
     '''Tokenizes the given Jack Source File'''
     # Constructor
@@ -205,64 +253,19 @@ class JackTokenizer:
 
 
 # TESTING THE TOKENIZER
-from pathlib import Path
+# from pathlib import Path
 
-keywords = {
-    "class",
-    "constructor",
-    "function",
-    "method",
-    "field",
-    "static",
-    "var",
-    "int",
-    "char",
-    "boolean",
-    "void",
-    "true",
-    "false",
-    "null",
-    "this",
-    "let",
-    "do",
-    "if",
-    "else",
-    "while",
-    "return"
-}
 
-symbols = {
-    "{",
-    "}",
-    "(",
-    ")",
-    "[",
-    "]",
-    ".",
-    ",",
-    ";",
-    "+",
-    "-",
-    "*",
-    "/",
-    "&",
-    "|",
-    "<",
-    ">",
-    "=",
-    "~"
-}
+# tz = JackTokenizer(Path('test.jack'))
 
-tz = JackTokenizer(Path('test.jack'))
+# while tz.has_more_tokens():
+#     print(tz.get_token_type())
 
-while tz.has_more_tokens():
-    print(tz.get_token_type())
+#     if (tz.get_token_type() == TokenType.STRING_CONST):
+#         print(tz.get_string_val())
 
-    if (tz.get_token_type() == TokenType.STRING_CONST):
-        print(tz.get_string_val())
+#     if (tz.get_token_type() == TokenType.INT_CONST):
+#         print(tz.get_int_val())
 
-    if (tz.get_token_type() == TokenType.INT_CONST):
-        print(tz.get_int_val())
-
-    if (tz.get_token_type() == TokenType.KEYWORD):
-        print(tz.get_keyword_type())
+#     if (tz.get_token_type() == TokenType.KEYWORD):
+#         print(tz.get_keyword_type())
