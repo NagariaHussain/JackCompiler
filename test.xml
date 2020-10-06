@@ -27,6 +27,16 @@
 <parameterList>
 </parameterList>
 <symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<varDec>
+<keyword> var </keyword>
+<identifier> Array </identifier>
+<identifier> b </identifier>
+<symbol> ; </symbol>
+</varDec>
+<symbol> } </symbol>
+</subroutineBody>
 </subroutineDec>
 
 
@@ -44,6 +54,10 @@
 <identifier> y </identifier>
 </parameterList>
 <symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<symbol> } </symbol>
+</subroutineBody>
 </subroutineDec>
 
 
@@ -64,5 +78,20 @@
 <identifier> c </identifier>
 </parameterList>
 <symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<varDec>
+<keyword> var </keyword>
+<keyword> int </keyword>
+<identifier> a </identifier>
+<symbol> , </symbol>
+<identifier> b </identifier>
+<symbol> , </symbol>
+<identifier> c </identifier>
+<symbol> ; </symbol>
+</varDec>
+<symbol> } </symbol>
+</subroutineBody>
 </subroutineDec>
+<symbol> } </symbol>
 </class>

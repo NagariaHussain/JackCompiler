@@ -66,6 +66,10 @@ class CompilationEngine:
         while (self.tokenizer.get_token_type() == TokenType.KEYWORD) and (self.tokenizer.get_keyword_type() in (KeywordType.CONSTRUCTOR, KeywordType.FUNCTION, KeywordType.METHOD)):
             self.compile_subroutine_dec()
 
+        # Class ending curly brackets
+        self.eat("}")
+        self.write_terminal_tag(TokenType.SYMBOL, "}")
+
         # At the end of function call
         self.out_stream.write("</class>\n")
 
@@ -168,6 +172,8 @@ class CompilationEngine:
         # Move to the next token
         self.tokenizer.has_more_tokens()
 
+        self.compile_subroutine_body()
+
         # Closing tag
         self.out_stream.write("</subroutineDec>\n")
 
@@ -184,7 +190,7 @@ class CompilationEngine:
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
             self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
         else:
-            raise AssertionError("Invalid Syntax for function name!")
+            raise AssertionError("Invalid Syntax for function parameter name name!")
 
         # Move to next token
         self.tokenizer.has_more_tokens()
@@ -214,15 +220,89 @@ class CompilationEngine:
             # Read the next token
             self.tokenizer.has_more_tokens()
         
-
-
     # '{' varDec* statements '}'
     def compile_subroutine_body(self):
-        pass
+        # Write opening tag
+        self.out_stream.write("<subroutineBody>\n")
+
+        # Eat opening curly bracket
+        self.eat("{")
+        self.write_terminal_tag(TokenType.SYMBOL, "{")
+        
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Handle variable declarations
+        while self.tokenizer.get_token_type() == TokenType.KEYWORD  \
+        and self.tokenizer.get_keyword_type() == KeywordType.VAR:
+            # Current token is the 'var' keyword
+            self.compile_var_dec()
+
+        # TODO: Handle statements
+        self.compile_statements()
+
+        # Eat closing curly bracker
+        self.eat("}")
+        self.write_terminal_tag(TokenType.SYMBOL, "}")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("</subroutineBody>\n")
+
 
     # 'var' type varName (',' varName)* ';'
     def compile_var_dec(self):
-        pass
+        # Write opening tag
+        self.out_stream.write("<varDec>\n")
+
+        # Write var keyword tag
+        self.write_terminal_tag(TokenType.KEYWORD, "var")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Write the type of variables
+        if self.is_valid_type():
+            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Not a valid var type!")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Invalid Syntax for var name!")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        while self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ",":
+            # Write this symbol
+            self.write_terminal_tag(TokenType.SYMBOL, ",")
+
+            # Move to the next token
+            self.tokenizer.has_more_tokens()
+
+            if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            else:
+                raise AssertionError("Invalid Syntax for var name!")
+            
+            # Move to the next token
+            self.tokenizer.has_more_tokens()
+
+        self.eat(";")
+        self.write_terminal_tag(TokenType.SYMBOL, ";")
+
+        # Move to the next token
+        self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("</varDec>\n")
     
     # statement*
     def compile_statements(self):
@@ -267,6 +347,8 @@ class CompilationEngine:
         if self.tokenizer.get_token_type() == TokenType.SYMBOL:
             if not (self.tokenizer.get_symbol() == string):
                 raise AssertionError(f"Expected symbol {string}, found: {self.tokenizer.get_symbol()}")
+        else:
+            raise AssertionError("Symbol not found!!")
             
     def is_valid_type(self):
         # If built-in data type

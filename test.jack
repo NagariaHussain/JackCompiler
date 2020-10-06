@@ -2,9 +2,15 @@
 class BST {
     field int x, y, z, w;
 
-    function char main() 
+    function char main() {
+        var Array b;
+    }
 
-    method void halwa(int x, char y) 
+    method void halwa(int x, char y) {
 
-    constructor BST new(char a, char b, boolean c) 
+    }
+
+    constructor BST new(char a, char b, boolean c) {
+        var int a, b, c;
+    }
 }
