@@ -35,6 +35,17 @@
 <identifier> b </identifier>
 <symbol> ; </symbol>
 </varDec>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> b </identifier>
+<symbol> = </symbol>
+<expression>
+<identifier> c </identifier>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
 <symbol> } </symbol>
 </subroutineBody>
 </subroutineDec>
@@ -56,6 +67,26 @@
 <symbol> ) </symbol>
 <subroutineBody>
 <symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> x </identifier>
+<symbol> = </symbol>
+<expression>
+<identifier> y </identifier>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<letStatement>
+<keyword> let </keyword>
+<identifier> y </identifier>
+<symbol> = </symbol>
+<expression>
+<identifier> z </identifier>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
 <symbol> } </symbol>
 </subroutineBody>
 </subroutineDec>
@@ -90,6 +121,8 @@
 <identifier> c </identifier>
 <symbol> ; </symbol>
 </varDec>
+<statements>
+</statements>
 <symbol> } </symbol>
 </subroutineBody>
 </subroutineDec>

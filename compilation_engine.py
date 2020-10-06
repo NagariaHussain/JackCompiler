@@ -8,19 +8,33 @@ data_types = {
     KeywordType.CHAR
 }
 
+statement_types = {
+    KeywordType.LET,
+    KeywordType.IF,
+    KeywordType.WHILE,
+    KeywordType.DO,
+    KeywordType.RETURN
+}
+
 class CompilationEngine:
     # Constructor
     def __init__(self, tokenizer: JackTokenizer, out_path):
         self.tokenizer = tokenizer
+        
+        # Open the output file for writing
         self.out_stream = out_path.open('w')
+
+        # Read the first token into memory
         self.tokenizer.has_more_tokens()
 
+        # Start analyzing syntax
         if self.tokenizer.get_token_type() == TokenType.KEYWORD:
             if self.tokenizer.get_keyword_type() == KeywordType.CLASS:
                 self.compile_class()
         else:
             raise AttributeError("Not starting with a class")
-
+    
+    # Helper method to write terminal XML tags
     def write_terminal_tag(self, t, v):
         if t == TokenType.KEYWORD:
             self.out_stream.write(f"<keyword> {v} </keyword>\n")
@@ -32,7 +46,6 @@ class CompilationEngine:
             self.out_stream.write(f"<integerConstant> {v} </integerConstant>\n")
         elif t == TokenType.STRING_CONST:
             self.out_stream.write(f"<stringConstant> {v} </stringConstant>\n")
-
 
     # 'class' className '{' classVarDec* subroutineDec* '}'
     def compile_class(self):
@@ -73,7 +86,6 @@ class CompilationEngine:
         # At the end of function call
         self.out_stream.write("</class>\n")
 
-    
     # ('static'|'field') type varName (',' varName)* ';'
     def compile_class_var_dec(self):
         # Write opening tag
@@ -238,7 +250,7 @@ class CompilationEngine:
             # Current token is the 'var' keyword
             self.compile_var_dec()
 
-        # TODO: Handle statements
+        # Handle statements
         self.compile_statements()
 
         # Eat closing curly bracker
@@ -306,11 +318,78 @@ class CompilationEngine:
     
     # statement*
     def compile_statements(self):
-        pass
+        # Write open tag
+        self.out_stream.write("<statements>\n")
+
+        # Process statements
+        while self.tokenizer.get_token_type() == TokenType.KEYWORD and self.tokenizer.get_keyword_type() in statement_types:
+            # Statment type is based on the starting keyword
+            statement_type = self.tokenizer.get_keyword_type()
+
+            # Call compile method based on type
+            if statement_type == KeywordType.LET:
+                self.compile_let()
+            elif statement_type == KeywordType.IF:
+                self.compile_if()
+            elif statement_type == KeywordType.WHILE:
+                self.compile_while_statement()
+            elif statement_type == KeywordType.DO:
+                self.compile_do()
+            elif statement_type == KeywordType.RETURN:
+                self.compile_return()
+        
+        self.out_stream.write("</statements>\n")
     
     # 'let' varName ('[' expression ']')? '=' expression ';'
     def compile_let(self):
-        pass
+        self.out_stream.write("<letStatement>\n")
+
+        self.write_terminal_tag(TokenType.KEYWORD, "let")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Invalid Syntax for varName!")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Optional bracket syntax
+        if self.tokenizer.get_token_type() == TokenType.SYMBOL \
+        and self.tokenizer.get_symbol() == "[":
+            self.write_terminal_tag(TokenType.SYMBOL, "[")
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+            
+            # Compile the expression
+            self.compile_expression()
+
+            self.eat("]")
+            self.write_terminal_tag(TokenType.SYMBOL, "]")
+
+            # Move to the next token
+            self.tokenizer.has_more_tokens()
+
+        # Eat assignment operator
+        self.eat("=")
+        self.write_terminal_tag(TokenType.SYMBOL, "=")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.compile_expression()
+
+        self.eat(";")
+        self.write_terminal_tag(TokenType.SYMBOL, ";")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.out_stream.write("</letStatement>\n")
     
     # 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     def compile_if(self):
@@ -330,7 +409,12 @@ class CompilationEngine:
 
     # term (op term)*
     def compile_expression(self):
-        pass
+        self.out_stream.write("<expression>\n")
+        # Implement expression handle
+        self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        self.tokenizer.has_more_tokens()
+        self.out_stream.write("</expression>\n")
+
     
     # integerConstant | stringConstant | keywordConstant | varName | 
     # varName '[' expression ']' | subroutineCall | '(' expression ')' 

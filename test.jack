@@ -4,10 +4,13 @@ class BST {
 
     function char main() {
         var Array b;
+
+        let b = c;
     }
 
     method void halwa(int x, char y) {
-
+        let x = y;
+        let y = z;
     }
 
     constructor BST new(char a, char b, boolean c) {
