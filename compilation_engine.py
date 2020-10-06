@@ -64,7 +64,7 @@ class CompilationEngine:
             self.compile_class_var_dec()
 
         while (self.tokenizer.get_token_type() == TokenType.KEYWORD) and (self.tokenizer.get_keyword_type() in (KeywordType.CONSTRUCTOR, KeywordType.FUNCTION, KeywordType.METHOD)):
-            pass
+            self.compile_subroutine_dec()
 
         # At the end of function call
         self.out_stream.write("</class>\n")
@@ -81,16 +81,8 @@ class CompilationEngine:
         # Read the next token
         self.tokenizer.has_more_tokens()
 
-        # If built-in data type
-        if self.tokenizer.get_token_type() == TokenType.KEYWORD:
-            # if int, char, boolean
-            if self.tokenizer.get_keyword_type() in data_types:
-                self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
-        
-        # If custom data type
-        elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+        if self.is_valid_type():
             self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
-         # Invalid data type
         else:
             raise AssertionError("Invalid class variable type!")
         
@@ -132,12 +124,54 @@ class CompilationEngine:
     
     # ('constructor' | 'function' | 'method') ('void' | 'type') subroutineName
     def compile_subroutine_dec(self):
-        pass
+        # Opening tag
+        self.out_stream.write("\n\n<subroutineDec>\n")
+        
+        # Write subroutine type
+        self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.is_valid_type() or (self.tokenizer.get_token_type() == TokenType.KEYWORD and self.tokenizer.get_keyword_type() == KeywordType.VOID):
+            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Not a valid subroutine return type!")
+
+         # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Invalid Syntax for function name!")
+        
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+        self.eat('(')
+        self.write_terminal_tag(TokenType.SYMBOL, "(")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # If there are some parameters
+        if not self.tokenizer.get_token_type() == TokenType.SYMBOL:
+            self.compile_parameter_list()
+
+        # Move to next token
+        self.eat(')')
+        self.write_terminal_tag(TokenType.SYMBOL, ")")
+        
+        # Move to the next token
+        self.tokenizer.has_more_tokens()
+        
+        # Closing tag
+        self.out_stream.write("\n\n</subroutineDec>\n")
 
     # ((type varName) (',' type varName)*)?
     def compile_parameter_list(self):
         pass
-    
+
     # '{' varDec* statements '}'
     def compile_subroutine_body(self):
         pass
@@ -190,5 +224,17 @@ class CompilationEngine:
             if not (self.tokenizer.get_symbol() == string):
                 raise AssertionError(f"Expected symbol {string}, found: {self.tokenizer.get_symbol()}")
             
+    def is_valid_type(self):
+        # If built-in data type
+        if self.tokenizer.get_token_type() == TokenType.KEYWORD:
+            # if int, char, boolean
+            if self.tokenizer.get_keyword_type() in data_types:
+                return True
+        
+        # If custom data type
+        elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            return True
 
+         # Invalid data type        
+        return False
 

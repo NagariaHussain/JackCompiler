@@ -1,5 +1,8 @@
 // My good comment
 class BST {
-    field int w;
-    static Node x, y, z;
+    field class x, y, z, w;
+
+    function char main() {
+        return;
+    }
 }
