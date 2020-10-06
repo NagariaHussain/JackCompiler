@@ -1,8 +1,10 @@
 // My good comment
 class BST {
-    field class x, y, z, w;
+    field int x, y, z, w;
 
-    function char main() {
-        return;
-    }
+    function char main() 
+
+    method void halwa(int x, char y) 
+
+    constructor BST new(char a, char b, boolean c) 
 }

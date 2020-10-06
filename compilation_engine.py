@@ -148,6 +148,7 @@ class CompilationEngine:
         
         # Move to next token
         self.tokenizer.has_more_tokens()
+
         self.eat('(')
         self.write_terminal_tag(TokenType.SYMBOL, "(")
 
@@ -155,8 +156,10 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         # If there are some parameters
-        if not self.tokenizer.get_token_type() == TokenType.SYMBOL:
+        self.out_stream.write("\n<parameterList>\n")
+        if not (self.tokenizer.get_token_type() == TokenType.SYMBOL):
             self.compile_parameter_list()
+        self.out_stream.write("</parameterList>\n")
 
         # Move to next token
         self.eat(')')
@@ -164,13 +167,54 @@ class CompilationEngine:
         
         # Move to the next token
         self.tokenizer.has_more_tokens()
-        
+
         # Closing tag
-        self.out_stream.write("\n\n</subroutineDec>\n")
+        self.out_stream.write("</subroutineDec>\n")
 
     # ((type varName) (',' type varName)*)?
     def compile_parameter_list(self):
-        pass
+        if self.is_valid_type():
+            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Invalid syntax in parameter list!")
+        
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Invalid Syntax for function name!")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Handle more than one parameters
+        while self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ",":
+            self.write_terminal_tag(TokenType.SYMBOL, ",")
+
+            # Read the next token
+            self.tokenizer.has_more_tokens()
+
+            # If the current token is a valid type name
+            if self.is_valid_type():
+                self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            else:
+                raise AssertionError("Invalid variable type in parameter list")
+            
+            # Read the next token
+            self.tokenizer.has_more_tokens()
+
+            # If current token is a valid identifier
+            if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            else:
+                raise AssertionError("Invalid variable name in parameter list!!")
+
+            # Read the next token
+            self.tokenizer.has_more_tokens()
+        
+
 
     # '{' varDec* statements '}'
     def compile_subroutine_body(self):

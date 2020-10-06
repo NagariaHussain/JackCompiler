@@ -6,6 +6,7 @@
 
 <classVarDec>
 <keyword> field </keyword>
+<keyword> int </keyword>
 <identifier> x </identifier>
 <symbol> , </symbol>
 <identifier> y </identifier>
@@ -15,3 +16,53 @@
 <identifier> w </identifier>
 <symbol> ; </symbol>
 </classVarDec>
+
+
+<subroutineDec>
+<keyword> function </keyword>
+<keyword> char </keyword>
+<identifier> main </identifier>
+<symbol> ( </symbol>
+
+<parameterList>
+</parameterList>
+<symbol> ) </symbol>
+</subroutineDec>
+
+
+<subroutineDec>
+<keyword> method </keyword>
+<keyword> void </keyword>
+<identifier> halwa </identifier>
+<symbol> ( </symbol>
+
+<parameterList>
+<keyword> int </keyword>
+<identifier> x </identifier>
+<symbol> , </symbol>
+<keyword> char </keyword>
+<identifier> y </identifier>
+</parameterList>
+<symbol> ) </symbol>
+</subroutineDec>
+
+
+<subroutineDec>
+<keyword> constructor </keyword>
+<identifier> BST </identifier>
+<identifier> new </identifier>
+<symbol> ( </symbol>
+
+<parameterList>
+<keyword> char </keyword>
+<identifier> a </identifier>
+<symbol> , </symbol>
+<keyword> char </keyword>
+<identifier> b </identifier>
+<symbol> , </symbol>
+<keyword> boolean </keyword>
+<identifier> c </identifier>
+</parameterList>
+<symbol> ) </symbol>
+</subroutineDec>
+</class>
