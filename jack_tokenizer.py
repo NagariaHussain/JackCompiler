@@ -251,6 +251,8 @@ class JackTokenizer:
     def get_string_val(self):
         return self.cur_strconst
 
+    def get_cur_ident(self):
+        return self.cur_ident
 
 # TESTING THE TOKENIZER
 # from pathlib import Path

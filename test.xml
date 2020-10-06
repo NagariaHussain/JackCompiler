@@ -1,0 +1,25 @@
+<class>
+<keyword> class </keyword>
+<identifier> BST </identifier>
+<symbol> { </symbol>
+
+
+<classVarDec>
+<keyword> field </keyword>
+<keyword> int </keyword>
+<identifier> w </identifier>
+<symbol> ; </symbol>
+</classVarDec>
+
+
+<classVarDec>
+<keyword> static </keyword>
+<identifier> Node </identifier>
+<identifier> x </identifier>
+<symbol> , </symbol>
+<identifier> y </identifier>
+<symbol> , </symbol>
+<identifier> z </identifier>
+<symbol> ; </symbol>
+</classVarDec>
+</class>

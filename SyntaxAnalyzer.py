@@ -22,4 +22,4 @@ elif in_path.is_dir():
 tokenizer = JackTokenizer(in_path)
 
 # Initialize compilation engine
-compilationEngine = CompilationEngine(tokenizer)
+compilationEngine = CompilationEngine(tokenizer, Path('test.xml'))
