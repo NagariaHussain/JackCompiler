@@ -109,7 +109,9 @@ class JackTokenizer:
 
                 # Handle inline comments
                 if (self.cur_char == "/"):
+                    print("Processing inline comment")
                     while self.cur_char != "\n":
+                        print(self.cur_char, end="")
                         self.cur_char = self.in_stream.read(1)
 
                     return self.has_more_tokens()
@@ -125,7 +127,7 @@ class JackTokenizer:
 
                         if self.cur_char == "/":
                             self.cur_char = self.in_stream.read(1)
-                            break
+                            return self.has_more_tokens()
                         else:
                             continue
                 
@@ -163,7 +165,7 @@ class JackTokenizer:
             self.cur_token_type = TokenType.STRING_CONST
 
             return True
-
+        
         return False
     
 

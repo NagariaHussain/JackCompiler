@@ -37,6 +37,7 @@ class CompilationEngine:
             if self.tokenizer.get_keyword_type() == KeywordType.CLASS:
                 self.compile_class()
         else:
+            print(self.tokenizer.get_token_type())
             raise AttributeError("Not starting with a class")
     
     # Helper method to write terminal XML tags
@@ -94,7 +95,7 @@ class CompilationEngine:
     # ('static'|'field') type varName (',' varName)* ';'
     def compile_class_var_dec(self):
         # Write opening tag
-        self.out_stream.write("\n\n<classVarDec>\n")
+        self.out_stream.write("<classVarDec>\n")
 
         # Write static/field
         self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
@@ -146,7 +147,7 @@ class CompilationEngine:
     # ('constructor' | 'function' | 'method') ('void' | 'type') subroutineName
     def compile_subroutine_dec(self):
         # Opening tag
-        self.out_stream.write("\n\n<subroutineDec>\n")
+        self.out_stream.write("<subroutineDec>\n")
         
         # Write subroutine type
         self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
@@ -177,7 +178,7 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         # If there are some parameters
-        self.out_stream.write("\n<parameterList>\n")
+        self.out_stream.write("<parameterList>\n")
         if not (self.tokenizer.get_token_type() == TokenType.SYMBOL):
             self.compile_parameter_list()
         self.out_stream.write("</parameterList>\n")
@@ -543,7 +544,10 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
-        self.compile_expression_list()
+        self.out_stream.write("<expressionList>\n")
+        if not (self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ")"):
+            self.compile_expression_list()
+        self.out_stream.write("</expressionList>\n")
 
         self.eat(")")
         self.write_terminal_tag(TokenType.SYMBOL, ")")
@@ -558,7 +562,7 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         # Write closing tag
-        self.out_stream.write("<doStatement>\n")
+        self.out_stream.write("</doStatement>\n")
     
     # 'return' expression? ';'
     def compile_return(self):
@@ -588,9 +592,13 @@ class CompilationEngine:
     # term (op term)*
     def compile_expression(self):
         self.out_stream.write("<expression>\n")
+        self.out_stream.write("<term>\n")
+        
         # TODO: Implement expression handle
         self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
         self.tokenizer.has_more_tokens()
+
+        self.out_stream.write("</term>\n")
         self.out_stream.write("</expression>\n")
 
     
@@ -602,7 +610,7 @@ class CompilationEngine:
 
     # (expression (',' expression)*)?
     def compile_expression_list(self):
-        pass
+        self.compile_expression()
     
     # eat the given string, else raise error
     def eat(self, string):
