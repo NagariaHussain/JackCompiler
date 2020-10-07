@@ -1,13 +1,17 @@
 # Import enums
 from type_enums import TokenType, KeywordType
+
+# Import jack tokenizer
 from jack_tokenizer import JackTokenizer
 
+# Supported data type keywords
 data_types = {
     KeywordType.INT,
     KeywordType.BOOLEAN,
     KeywordType.CHAR
 }
 
+# Supported statement type keywords
 statement_types = {
     KeywordType.LET,
     KeywordType.IF,
@@ -17,6 +21,7 @@ statement_types = {
 }
 
 class CompilationEngine:
+    '''The brain of the Jack syntax analyzer'''
     # Constructor
     def __init__(self, tokenizer: JackTokenizer, out_path):
         self.tokenizer = tokenizer
@@ -263,7 +268,6 @@ class CompilationEngine:
         # Write closing tag
         self.out_stream.write("</subroutineBody>\n")
 
-
     # 'var' type varName (',' varName)* ';'
     def compile_var_dec(self):
         # Write opening tag
@@ -496,7 +500,6 @@ class CompilationEngine:
         # Write closing tag
         self.out_stream.write("</whileStatement>\n")
 
-    
     # 'do' subroutineCall ';'
     def compile_do(self):
         # Write opening tag
@@ -608,7 +611,9 @@ class CompilationEngine:
                 raise AssertionError(f"Expected symbol {string}, found: {self.tokenizer.get_symbol()}")
         else:
             raise AssertionError("Symbol not found!!")
-            
+
+    # Utility method to check weather 
+    # the current token is a valid data type 
     def is_valid_type(self):
         # If built-in data type
         if self.tokenizer.get_token_type() == TokenType.KEYWORD:
