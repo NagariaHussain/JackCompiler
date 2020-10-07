@@ -393,7 +393,67 @@ class CompilationEngine:
     
     # 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     def compile_if(self):
-        pass
+        self.out_stream.write("<ifStatement>\n")
+
+        self.write_terminal_tag(TokenType.KEYWORD, "if")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.eat("(")
+        self.write_terminal_tag(TokenType.SYMBOL, "(")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.compile_expression()
+
+        self.eat(")")
+        self.write_terminal_tag(TokenType.SYMBOL, ")")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.eat("{")
+        self.write_terminal_tag(TokenType.SYMBOL, "{")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Compile if-block body
+        self.compile_statements()
+
+        self.eat("}")
+        self.write_terminal_tag(TokenType.SYMBOL, "}")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # If there is an else statement
+        # Handle else block
+        if self.tokenizer.get_token_type() == TokenType.KEYWORD \
+        and self.tokenizer.get_keyword_type() == KeywordType.ELSE:
+            self.write_terminal_tag(TokenType.KEYWORD, "else")
+            
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+            self.eat("{")
+            self.write_terminal_tag(TokenType.SYMBOL, "{")
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+            self.compile_statements()
+
+            self.eat("}")
+            self.write_terminal_tag(TokenType.SYMBOL, "}")
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("</ifStatement>\n")
     
     # 'while' '(' expression ')' '{' statements '}'
     def compile_while_statement(self):
