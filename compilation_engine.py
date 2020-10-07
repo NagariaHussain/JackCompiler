@@ -457,7 +457,45 @@ class CompilationEngine:
     
     # 'while' '(' expression ')' '{' statements '}'
     def compile_while_statement(self):
-        pass
+        self.out_stream.write("<whileStatement>\n")
+
+        self.write_terminal_tag(TokenType.KEYWORD, "while")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.eat("(")
+        self.write_terminal_tag(TokenType.SYMBOL, "(")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.compile_expression()
+
+        self.eat(")")
+        self.write_terminal_tag(TokenType.SYMBOL, ")")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.eat("{")
+        self.write_terminal_tag(TokenType.SYMBOL, "{")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Compile if-block body
+        self.compile_statements()
+
+        self.eat("}")
+        self.write_terminal_tag(TokenType.SYMBOL, "}")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("</whileStatement>\n")
+
     
     # 'do' subroutineCall ';'
     def compile_do(self):

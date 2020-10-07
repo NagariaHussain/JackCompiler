@@ -16,8 +16,11 @@ class BST {
     constructor BST new(char a, char b, boolean c) {
         var int a, b, c;
 
-        if (x) {
-            let x = c;
+        while(x) {
+            let x = y;
+            if (x) {
+                let z = x;
+            }
         }
     }
 }

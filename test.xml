@@ -124,8 +124,8 @@
 <symbol> ; </symbol>
 </varDec>
 <statements>
-<ifStatement>
-<keyword> if </keyword>
+<whileStatement>
+<keyword> while </keyword>
 <symbol> ( </symbol>
 <expression>
 <identifier> x </identifier>
@@ -138,13 +138,34 @@
 <identifier> x </identifier>
 <symbol> = </symbol>
 <expression>
-<identifier> c </identifier>
+<identifier> y </identifier>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<ifStatement>
+<keyword> if </keyword>
+<symbol> ( </symbol>
+<expression>
+<identifier> x </identifier>
+</expression>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> z </identifier>
+<symbol> = </symbol>
+<expression>
+<identifier> x </identifier>
 </expression>
 <symbol> ; </symbol>
 </letStatement>
 </statements>
 <symbol> } </symbol>
 </ifStatement>
+</statements>
+<symbol> } </symbol>
+</whileStatement>
 </statements>
 <symbol> } </symbol>
 </subroutineBody>
