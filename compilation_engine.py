@@ -499,7 +499,63 @@ class CompilationEngine:
     
     # 'do' subroutineCall ';'
     def compile_do(self):
-        pass
+        # Write opening tag
+        self.out_stream.write("<doStatement>\n")
+
+        # Write do keyword tag
+        self.write_terminal_tag(TokenType.KEYWORD, "do")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Handle subroutineCall
+        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+        else:
+            raise AssertionError("Not a valid subroutine/class name!!!")
+        
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Is is a method call
+        if self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() == ".":
+            self.write_terminal_tag(TokenType.SYMBOL, ".")
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+            # Handle subroutineCall
+            if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            else:
+                raise AssertionError("Not a valid subroutine/class name!!!")
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+        self.eat("(")
+        self.write_terminal_tag(TokenType.SYMBOL, "(")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.compile_expression_list()
+
+        self.eat(")")
+        self.write_terminal_tag(TokenType.SYMBOL, ")")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        self.eat(";")
+        self.write_terminal_tag(TokenType.SYMBOL, ";")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("<doStatement>\n")
     
     # 'return' expression? ';'
     def compile_return(self):
@@ -508,7 +564,7 @@ class CompilationEngine:
     # term (op term)*
     def compile_expression(self):
         self.out_stream.write("<expression>\n")
-        # Implement expression handle
+        # TODO: Implement expression handle
         self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
         self.tokenizer.has_more_tokens()
         self.out_stream.write("</expression>\n")

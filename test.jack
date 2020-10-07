@@ -3,6 +3,8 @@ class BST {
     field int x, y, z, w;
 
     function char main() {
+        do sayHello();
+        do Memory.alloc();
     }
 
     method void halwa(int x, char y) {
