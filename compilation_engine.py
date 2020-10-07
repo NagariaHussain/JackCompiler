@@ -559,7 +559,28 @@ class CompilationEngine:
     
     # 'return' expression? ';'
     def compile_return(self):
-        pass
+        # Write opening tag
+        self.out_stream.write("<returnStatement>\n")
+
+        # Write do keyword tag
+        self.write_terminal_tag(TokenType.KEYWORD, "return")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        if self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() == ";":
+            self.write_terminal_tag(TokenType.SYMBOL, ";")
+        else:
+            self.compile_expression()
+            self.eat(";")
+            self.write_terminal_tag(TokenType.SYMBOL, ";")
+
+        # Move to next token
+        self.tokenizer.has_more_tokens()
+
+        # Write closing tag
+        self.out_stream.write("</returnStatement>\n")
 
     # term (op term)*
     def compile_expression(self):
