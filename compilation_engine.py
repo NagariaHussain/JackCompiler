@@ -55,7 +55,8 @@ class CompilationEngine:
         
         # Open the output file for writing
         self.out_stream = out_path.open('w')
-
+    
+    def start_compilation(self):
         # Read the first token into memory
         self.tokenizer.has_more_tokens()
 
@@ -65,7 +66,7 @@ class CompilationEngine:
                 self.compile_class()
         else:
             raise AttributeError("Not starting with a class")
-    
+
     # Helper method to write terminal XML tags
     def write_terminal_tag(self, t, v):
         if t == TokenType.KEYWORD:

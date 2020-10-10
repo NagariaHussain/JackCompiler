@@ -1,28 +1,14 @@
-// My good comment
-class BST {
-    field int x, y, z, w;
+class Node {
+    field int x, y, z;
+    field char a;
 
-    function char main() {
-        do sayHello();
-        do Memory.alloc();
-    }
+    function void main(int h, boolean y) {
 
-    method void halwa(int x, char y) {
-        if (x) {
-            let a = y;
-        } else {
-            let z = x;
-        }
-    }
+        var Array j;
 
-    constructor BST new(char a, char b, boolean c) {
-        var int a, b, c;
+        let j = 10 + 2;
 
-        while(x) {
-            let x = y;
-            if (x) {
-                let z = x;
-            }
-        }
+        do Keyboard.getInt("Hello, world!");
+        return x * 6;
     }
 }

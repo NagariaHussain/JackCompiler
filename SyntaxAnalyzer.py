@@ -13,13 +13,23 @@ in_path = Path(argv[1])
 
 if in_path.is_file():
     # Path points to a file
-    pass
+    # Initialize tokenizer
+    tokenizer = JackTokenizer(in_path)
+    # Initialize compilation engine
+    compilationEngine = CompilationEngine(tokenizer, in_path.with_suffix(".xml"))
+
+    # Start compilation
+    compilationEngine.start_compilation()
+
 elif in_path.is_dir():
     # Path points to a directory
-    pass
+    for item in in_path.iterdir():
+        if item.is_file():
+            # Compile every jack file
+            if item.suffix == ".jack":
+                tokenizer = JackTokenizer(item)
+                ci = CompilationEngine(tokenizer, item.with_suffix(".xml"))
+                ci.start_compilation()
 
-# Initialize tokenizer
-tokenizer = JackTokenizer(in_path)
 
-# Initialize compilation engine
-compilationEngine = CompilationEngine(tokenizer, Path('test.xml'))
+# END OF FILE
