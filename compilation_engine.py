@@ -645,13 +645,16 @@ class CompilationEngine:
         
         if self.tokenizer.get_token_type() == TokenType.INT_CONST:
             self.write_terminal_tag(TokenType.INT_CONST, self.tokenizer.get_int_val())
+            self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.STRING_CONST:
             self.write_terminal_tag(TokenType.STRING_CONST, self.tokenizer.get_string_val())
+            self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.KEYWORD \
             and self.tokenizer.get_keyword_type() in keyword_constants:
             self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+            self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
             self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
@@ -691,8 +694,6 @@ class CompilationEngine:
 
                     # Move to next token
                     self.tokenizer.has_more_tokens()
-                else:
-                    raise AssertionError("The symbol after identifier must be [ or (")
         
         elif self.tokenizer.get_token_type() == TokenType.SYMBOL:
             # Handle '(' expression ')'
