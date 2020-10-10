@@ -569,7 +569,8 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         self.out_stream.write("<expressionList>\n")
-        if not (self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ")"):
+        if not (self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() == ")"):
             self.compile_expression_list()
         self.out_stream.write("</expressionList>\n")
 
@@ -635,7 +636,7 @@ class CompilationEngine:
         # Write closing tag
         self.out_stream.write("</expression>\n")
 
-    
+
     # integerConstant | stringConstant | keywordConstant | varName | 
     # varName '[' expression ']' | subroutineCall | '(' expression ')' 
     # | unaryOp term
@@ -717,9 +718,16 @@ class CompilationEngine:
 
         self.out_stream.write("</term>\n")
 
-    # (expression (',' expression)*)?
+    # expression (',' expression)*
     def compile_expression_list(self):
         self.compile_expression()
+
+        while (self.tokenizer.get_token_type() == TokenType.SYMBOL) \
+            and (self.tokenizer.get_symbol() == ","):
+            self.write_terminal_tag(TokenType.SYMBOL, ",")
+            self.tokenizer.has_more_tokens()
+            self.compile_expression()
+
     
     # eat the given string, else raise error
     def eat(self, string):
