@@ -11,6 +11,14 @@ data_types = {
     KeywordType.CHAR
 }
 
+# Supported keyword constants
+keyword_constants = {
+    KeywordType.TRUE,
+    KeywordType.FALSE,
+    KeywordType.NULL,
+    KeywordType.THIS
+}
+
 # Supported statement type keywords
 statement_types = {
     KeywordType.LET,
@@ -633,7 +641,80 @@ class CompilationEngine:
     # | unaryOp term
     def compile_term(self):
         self.out_stream.write("<term>\n")
-        # TODO
+        
+        if self.tokenizer.get_token_type() == TokenType.INT_CONST:
+            self.write_terminal_tag(TokenType.INT_CONST, self.tokenizer.get_int_val())
+        
+        elif self.tokenizer.get_token_type() == TokenType.STRING_CONST:
+            self.write_terminal_tag(TokenType.STRING_CONST, self.tokenizer.get_string_val())
+        
+        elif self.tokenizer.get_token_type() == TokenType.KEYWORD \
+            and self.tokenizer.get_keyword_type() in keyword_constants:
+            self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+        
+        elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+
+            # Move to next token
+            self.tokenizer.has_more_tokens()
+
+            if self.tokenizer.get_token_type() == TokenType.SYMBOL:
+                # Handle varName '[' expression ']'
+                if self.tokenizer.get_symbol() == "[":
+                    self.eat("[")
+                    self.write_terminal_tag(TokenType.SYMBOL, "[")
+                    self.tokenizer.has_more_tokens()
+
+                    self.compile_expression()
+
+                    self.eat(']')
+                    self.write_terminal_tag(TokenType.SYMBOL, "]")
+
+                    # Move to next token
+                    self.tokenizer.has_more_tokens()
+                # Handle subroutineCall
+                elif self.tokenizer.get_symbol() == "(":
+                    self.eat("(")
+                    self.write_terminal_tag(TokenType.SYMBOL, "(")
+
+                    # Move to next token
+                    self.tokenizer.has_more_tokens()
+
+                    self.out_stream.write("<expressionList>\n")
+                    if not (self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ")"):
+                        self.compile_expression_list()
+                    self.out_stream.write("</expressionList>\n")
+
+                    self.eat(")")
+                    self.write_terminal_tag(TokenType.SYMBOL, ")")
+
+                    # Move to next token
+                    self.tokenizer.has_more_tokens()
+                else:
+                    raise AssertionError("The symbol after identifier must be [ or (")
+        
+        elif self.tokenizer.get_token_type() == TokenType.SYMBOL:
+            # Handle '(' expression ')'
+            if self.tokenizer.get_symbol() == '(':
+                self.eat("(")
+                self.write_terminal_tag(TokenType.SYMBOL, "(")
+                self.tokenizer.has_more_tokens()
+
+                self.compile_expression()
+
+                self.eat(")")
+                self.write_terminal_tag(TokenType.SYMBOL, ")")
+                self.tokenizer.has_more_tokens()
+            # Handle unaryOp term
+            elif self.tokenizer.get_symbol() in allowed_unary_op:
+                self.write_terminal_tag(TokenType.SYMBOL, self.tokenizer.get_symbol())
+
+                self.tokenizer.has_more_tokens()
+
+                self.compile_term()
+            else:
+                raise AssertionError("( or unary Op expected!!")
+
         self.out_stream.write("</term>\n")
 
     # (expression (',' expression)*)?
