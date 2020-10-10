@@ -91,6 +91,7 @@ class JackTokenizer:
             else:
                 self.cur_token_type = TokenType.IDENTIFIER
 
+
             return True
         
         if self.cur_char in symbols:
@@ -109,9 +110,7 @@ class JackTokenizer:
 
                 # Handle inline comments
                 if (self.cur_char == "/"):
-                    print("Processing inline comment")
                     while self.cur_char != "\n":
-                        print(self.cur_char, end="")
                         self.cur_char = self.in_stream.read(1)
 
                     return self.has_more_tokens()
@@ -150,7 +149,6 @@ class JackTokenizer:
                 self.cur_char = self.in_stream.read(1)
             
             self.cur_token_type = TokenType.INT_CONST
-
             return True
 
         if self.cur_char == '"':
@@ -163,10 +161,15 @@ class JackTokenizer:
             # Move one character ahead
             self.cur_char = self.in_stream.read(1)
             self.cur_token_type = TokenType.STRING_CONST
-
             return True
         
-        return False
+        if self.cur_char == "":
+            return False
+        
+        self.cur_char = self.in_stream.read(1)
+
+        return self.has_more_tokens()
+
     
 
     # Returns the type of token

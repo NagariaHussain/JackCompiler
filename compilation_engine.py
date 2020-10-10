@@ -345,6 +345,8 @@ class CompilationEngine:
         # Move to the next token
         self.tokenizer.has_more_tokens()
 
+        print("Current token type: ", self.tokenizer.get_token_type())
+        
         # Write closing tag
         self.out_stream.write("</varDec>\n")
     
@@ -352,7 +354,6 @@ class CompilationEngine:
     def compile_statements(self):
         # Write open tag
         self.out_stream.write("<statements>\n")
-
         # Process statements
         while self.tokenizer.get_token_type() == TokenType.KEYWORD and self.tokenizer.get_keyword_type() in statement_types:
             # Statment type is based on the starting keyword
