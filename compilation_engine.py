@@ -35,9 +35,12 @@ allowed_op = {
     "*",
     "/",
     "&",
+    "&amp;",
     "|",
     "<",
+    "&lt;",
     ">",
+    "&gt;",
     "="
 }
 
@@ -676,8 +679,24 @@ class CompilationEngine:
 
                     # Move to next token
                     self.tokenizer.has_more_tokens()
+
                 # Handle subroutineCall
-                elif self.tokenizer.get_symbol() == "(":
+                elif self.tokenizer.get_symbol() == "(" or self.tokenizer.get_symbol() == ".":
+                    # Is a method call
+                    if self.tokenizer.get_symbol() == ".":
+                        self.write_terminal_tag(TokenType.SYMBOL, ".")
+                        # Move to next token
+                        self.tokenizer.has_more_tokens()
+
+                        # Handle subroutineCall
+                        if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+                            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                        else:
+                            raise AssertionError("Not a valid subroutine/class name!!!")
+                        
+                        # Move to next token
+                        self.tokenizer.has_more_tokens()
+                    
                     self.eat("(")
                     self.write_terminal_tag(TokenType.SYMBOL, "(")
 
