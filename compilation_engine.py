@@ -20,6 +20,22 @@ statement_types = {
     KeywordType.RETURN
 }
 
+# Supported binary operations
+allowed_op = {
+    "+",
+    "-",
+    "*",
+    "/",
+    "&",
+    "|",
+    "<",
+    ">",
+    "="
+}
+
+# Supported unary operations
+allowed_unary_op = { "-", "~" }
+
 class CompilationEngine:
     '''The brain of the Jack syntax analyzer'''
     # Constructor
@@ -592,13 +608,23 @@ class CompilationEngine:
     # term (op term)*
     def compile_expression(self):
         self.out_stream.write("<expression>\n")
-        self.out_stream.write("<term>\n")
-        
-        # TODO: Implement expression handle
-        self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
-        self.tokenizer.has_more_tokens()
 
-        self.out_stream.write("</term>\n")
+        # Compile term
+        self.compile_term()
+
+        # Handle (op term)*
+        while self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() in allowed_op:
+            # Write tag for operation symbol
+            self.write_terminal_tag(TokenType.SYMBOL, self.tokenizer.get_symbol())
+
+            # Move to next token 
+            self.tokenizer.has_more_tokens()
+
+            # Compile term
+            self.compile_term()
+        
+        # Write closing tag
         self.out_stream.write("</expression>\n")
 
     
@@ -606,7 +632,9 @@ class CompilationEngine:
     # varName '[' expression ']' | subroutineCall | '(' expression ')' 
     # | unaryOp term
     def compile_term(self):
-        pass
+        self.out_stream.write("<term>\n")
+        # TODO
+        self.out_stream.write("</term>\n")
 
     # (expression (',' expression)*)?
     def compile_expression_list(self):
