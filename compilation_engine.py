@@ -64,7 +64,6 @@ class CompilationEngine:
             if self.tokenizer.get_keyword_type() == KeywordType.CLASS:
                 self.compile_class()
         else:
-            print(self.tokenizer.get_token_type())
             raise AttributeError("Not starting with a class")
     
     # Helper method to write terminal XML tags
@@ -344,8 +343,6 @@ class CompilationEngine:
 
         # Move to the next token
         self.tokenizer.has_more_tokens()
-
-        print("Current token type: ", self.tokenizer.get_token_type())
         
         # Write closing tag
         self.out_stream.write("</varDec>\n")
