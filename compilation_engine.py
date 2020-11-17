@@ -4,7 +4,7 @@ from type_enums import TokenType, KeywordType
 # Import jack tokenizer
 from jack_tokenizer import JackTokenizer
 
-# Supported data type keywords
+# Supported built-in data type keywords
 data_types = {
     KeywordType.INT,
     KeywordType.BOOLEAN,
