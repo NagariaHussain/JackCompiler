@@ -1,37 +1,46 @@
-import typing
+from typing import NamedTuple
+from enum import Enum
 
-class DemoNTClass(typing.NamedTuple):
-
-    a: int
-    b: float = 1.1
-    c = 'spam'
-
-print('annotations:', DemoNTClass.__annotations__)
-
-
-print('a:', DemoNTClass.a)
-print('b:', DemoNTClass.b)
-print('c:', DemoNTClass.c)
-
-nt = DemoNTClass(10, 78)
-
-print('nt.a:', nt.a)
-print('nt.b:', nt.b)
-print('nt.c:', nt.c)
+class SymbolKind(Enum):
+    STATIC = 0
+    FEILD = 1
+    ARG = 2
+    VAR = 3
+    NONE = 4
 
 
-from dataclasses import dataclass
+class SymbolTuple(NamedTuple):
+    name: str
+    type: str
+    kind: SymbolKind
+    index: int
 
-@dataclass
-class DemoDataClass:
-    a: int
-    b: float = 1.1
-    c = 'spam'
+class SymbolTable:
+    def __init__(self) -> None:
+        '''creates a new symbol table'''
+        pass
 
-print('annotations:', DemoDataClass.__annotations__)
+    def start_subroutine(self) -> None:
+        '''reset subroutine level symbol table'''
+        pass
 
+    def define(self, name: str, type: str, kind: SymbolKind) -> None:
+        '''creates a new symbol table entry'''
+        pass
 
-print('a:', DemoDataClass.a)
-# print('b:', DemoDataClass.b)
-# print('c:', DemoDataClass.c)
+    def get_var_count(self, kind: SymbolKind) -> int:
+        '''returns number of variables of given `kind`'''
+        pass
+
+    def get_kind_of(name: str) -> SymbolKind:
+        '''returns the kind of the named identifier'''
+        pass
+    
+    def get_type_of(name: str) -> str:
+        '''returns the type of the named identifier'''
+        pass
+
+    def get_index_of(name: str) -> int:
+        '''returns the index assigned to the named identifier'''
+        pass
 
