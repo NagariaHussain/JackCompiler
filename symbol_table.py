@@ -28,6 +28,12 @@ class SymbolTable:
     def reset_table(self) -> None:
         '''clear symbol table'''
         self.hash_map.clear()
+        self.kind_index = {
+            SymbolKind.STATIC: 0,
+            SymbolKind.FEILD: 0,
+            SymbolKind.ARG: 0,
+            SymbolKind.VAR: 0
+        }
 
     def define(self, 
         name: str, 

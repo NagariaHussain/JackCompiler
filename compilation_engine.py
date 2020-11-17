@@ -4,6 +4,9 @@ from type_enums import TokenType, KeywordType
 # Import jack tokenizer
 from jack_tokenizer import JackTokenizer
 
+# Import symbol table 
+from symbol_table import SymbolKind, SymbolTable
+
 # Supported built-in data type keywords
 data_types = {
     KeywordType.INT,
@@ -53,6 +56,10 @@ class CompilationEngine:
     def __init__(self, tokenizer: JackTokenizer, out_path):
         self.tokenizer = tokenizer
         
+        # Create symbol tables
+        self.class_level_st = SymbolTable()
+        self.subroutine_level_st = SymbolTable()
+
         # Open the output file for writing
         self.out_stream = out_path.open('w')
     
@@ -91,6 +98,7 @@ class CompilationEngine:
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
             self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            self.out_stream.write("\n===DECLARED===\nclass name\n=======")
         else:
             raise AttributeError("Not a valid class name!")
             return
@@ -125,13 +133,30 @@ class CompilationEngine:
         self.out_stream.write("<classVarDec>\n")
 
         # Write static/field
-        self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+        self.write_terminal_tag(
+            TokenType.KEYWORD, 
+            self.tokenizer.get_cur_ident())
+
+        # To store variable properties
+        var_kind = None
+        var_type = None
+        var_index = None
+        var_name = None
+
+        if self.tokenizer.get_cur_ident() == "static":
+            var_kind = SymbolKind.STATIC
+        elif self.tokenizer.get_cur_ident() == "feild":
+            var_kind = SymbolKind.VAR
 
         # Read the next token
         self.tokenizer.has_more_tokens()
 
         if self.is_valid_type():
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                self.tokenizer.get_cur_ident())
+
+            var_type = self.tokenizer.get_cur_ident()
         else:
             raise AssertionError("Invalid class variable type!")
         
@@ -139,7 +164,20 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            var_name = self.tokenizer.get_cur_ident()
+
+            # Write varible tag to XML file
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                var_name)
+
+            # Define new class level variable
+            self.class_level_st.define(var_name, var_type, var_kind)
+            var_index = self.class_level_st.get_index_of(var_name)
+
+            # Write variable properties
+            self.out_stream.write(
+                f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
         else:
             raise AssertionError("Invalid class variable name!")
 
@@ -147,14 +185,28 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         # If has more than one varibles: E.g. field int x, y, z;
-        while self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ",":
+        while self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() == ",":
             self.write_terminal_tag(TokenType.SYMBOL, ",")
 
             # Move to next token
             self.tokenizer.has_more_tokens()
 
             if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                var_name = self.tokenizer.get_cur_ident()
+
+                # Write varible tag to XML file
+                self.write_terminal_tag(
+                    self.tokenizer.get_token_type(), 
+                    var_name)
+
+                # Define new class level variable
+                self.class_level_st.define(var_name, var_type, var_kind)
+                var_index = self.class_level_st.get_index_of(var_name)
+
+                # Write variable properties
+                self.out_stream.write(
+                    f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
             else:
                 raise AssertionError("Invalid Syntax for class varible declaration!")
 
@@ -178,6 +230,9 @@ class CompilationEngine:
         
         # Write subroutine type
         self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+
+        # Reset subroutine level symbol table
+        self.subroutine_level_st.reset_table()
 
         # Move to next token
         self.tokenizer.has_more_tokens()
@@ -224,8 +279,17 @@ class CompilationEngine:
 
     # ((type varName) (',' type varName)*)?
     def compile_parameter_list(self):
+        # For storing varible params
+        var_name = None
+        var_type = None
+        var_kind = SymbolKind.ARG  # Argument list
+        var_index = None
+
         if self.is_valid_type():
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            var_type = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                var_type)
         else:
             raise AssertionError("Invalid syntax in parameter list!")
         
@@ -233,15 +297,31 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            var_name = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                var_name)
         else:
-            raise AssertionError("Invalid Syntax for function parameter name name!")
+            raise AssertionError(
+                "Invalid Syntax for function parameter name name!")
 
+        # Define the argument variable
+        self.subroutine_level_st.define(
+            var_name, var_type, var_kind
+        )
+
+        # Get the index of the newly created variable
+        var_index = self.subroutine_level_st.get_index_of(var_name)
+
+        # Write variable properties
+        self.out_stream.write(
+            f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
         # Move to next token
         self.tokenizer.has_more_tokens()
 
         # Handle more than one parameters
-        while self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ",":
+        while self.tokenizer.get_token_type() == TokenType.SYMBOL \
+            and self.tokenizer.get_symbol() == ",":
             self.write_terminal_tag(TokenType.SYMBOL, ",")
 
             # Read the next token
@@ -249,7 +329,10 @@ class CompilationEngine:
 
             # If the current token is a valid type name
             if self.is_valid_type():
-                self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+                var_type = self.tokenizer.get_cur_ident()
+                self.write_terminal_tag(
+                    self.tokenizer.get_token_type(), 
+                    var_type)
             else:
                 raise AssertionError("Invalid variable type in parameter list")
             
@@ -258,10 +341,16 @@ class CompilationEngine:
 
             # If current token is a valid identifier
             if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                var_name = self.tokenizer.get_cur_ident()
+                self.write_terminal_tag(
+                    TokenType.IDENTIFIER, 
+                    var_name)
             else:
-                raise AssertionError("Invalid variable name in parameter list!!")
-
+                raise AssertionError(
+                        "Invalid variable name in parameter list!!")
+             # Write variable properties
+            self.out_stream.write(
+                f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
             # Read the next token
             self.tokenizer.has_more_tokens()
         
@@ -304,12 +393,21 @@ class CompilationEngine:
         # Write var keyword tag
         self.write_terminal_tag(TokenType.KEYWORD, "var")
 
+        # For storing variable params
+        var_name = None
+        var_type = None
+        var_kind = SymbolKind.VAR
+        var_index = None
+
         # Move to next token
         self.tokenizer.has_more_tokens()
 
         # Write the type of variables
         if self.is_valid_type():
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            var_type = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                var_type)
         else:
             raise AssertionError("Not a valid var type!")
 
@@ -317,12 +415,25 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            var_name = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                var_name)
         else:
             raise AssertionError("Invalid Syntax for var name!")
 
         # Move to next token
         self.tokenizer.has_more_tokens()
+
+        self.subroutine_level_st.define(
+            var_name, var_type, var_kind
+        )
+
+        var_index = self.subroutine_level_st.get_index_of(var_name)
+
+        # Write variable properties
+        self.out_stream.write(
+            f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
 
         while self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ",":
             # Write this symbol
@@ -332,10 +443,20 @@ class CompilationEngine:
             self.tokenizer.has_more_tokens()
 
             if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                var_name = self.tokenizer.get_cur_ident()
+                self.write_terminal_tag(
+                    TokenType.IDENTIFIER, 
+                    var_name)
             else:
                 raise AssertionError("Invalid Syntax for var name!")
             
+            self.subroutine_level_st.define(var_name, var_type, var_kind)
+            var_index = self.subroutine_level_st.get_index_of(var_name)
+
+            # Write variable properties
+            self.out_stream.write(
+                f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
+
             # Move to the next token
             self.tokenizer.has_more_tokens()
 
@@ -381,7 +502,15 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            var_name = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                var_name)
+            
+            var_props = self.lookup_st(var_name)
+            # Write variable properties
+            self.out_stream.write(
+                f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
         else:
             raise AssertionError("Invalid Syntax for varName!")
 
@@ -638,7 +767,6 @@ class CompilationEngine:
         # Write closing tag
         self.out_stream.write("</expression>\n")
 
-
     # integerConstant | stringConstant | keywordConstant | varName | 
     # varName '[' expression ']' | subroutineCall | '(' expression ')' 
     # | unaryOp term
@@ -659,7 +787,18 @@ class CompilationEngine:
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            var_name = self.tokenizer.get_cur_ident()
+            var_props = self.lookup_st(var_name)
+
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                var_name)
+
+            if var_props:
+                # Write variable properties
+                self.out_stream.write(
+                    f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
+
 
             # Move to next token
             self.tokenizer.has_more_tokens()
@@ -747,7 +886,6 @@ class CompilationEngine:
             self.tokenizer.has_more_tokens()
             self.compile_expression()
 
-    
     # eat the given string, else raise error
     def eat(self, string):
         if self.tokenizer.get_token_type() == TokenType.SYMBOL:
@@ -771,4 +909,41 @@ class CompilationEngine:
 
          # Invalid data type        
         return False
+
+    # Lookup variable in symbol table
+    def lookup_st(self, v_name):
+        '''return variable properties'''
+        from pprint import pprint
+        pprint(self.subroutine_level_st.hash_map)
+        pprint(self.class_level_st.hash_map)
+
+        # To store looked up props
+        v_props = {}
+
+        # lookup subroutine level table
+        v_kind = self.subroutine_level_st.get_kind_of(v_name)
+
+        print("v_kind == SymbolKind.NONE: ", v_kind == SymbolKind.NONE)
+        
+        # var not found in subroutine level st
+        if v_kind == SymbolKind.NONE:
+            # lookup class level table
+            v_kind = self.class_level_st.get_kind_of(v_name)
+
+            if v_kind == SymbolKind.NONE:
+                return False
+
+            v_props["kind"] = v_kind
+            v_props["type"] = self.class_level_st.get_type_of(v_name)
+            v_props["index"] = self.class_level_st.get_index_of(v_name)
+        
+        # Data found for subroutine level table
+        v_props["kind"] = v_kind
+        v_props["type"] = self.subroutine_level_st.get_type_of(v_name)
+        v_props["index"] = self.subroutine_level_st.get_index_of(v_name)
+
+        return v_props
+
+        
+
 
