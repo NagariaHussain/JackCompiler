@@ -114,10 +114,18 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         # While there are field/static declarations
-        while (self.tokenizer.get_token_type() == TokenType.KEYWORD) and (self.tokenizer.get_keyword_type() in  (KeywordType.FIELD, KeywordType.STATIC) ):
+        while \
+        (self.tokenizer.get_token_type() == TokenType.KEYWORD) and\
+        (
+            self.tokenizer.get_keyword_type() in (KeywordType.FIELD, KeywordType.STATIC) 
+        ):
             self.compile_class_var_dec()
 
-        while (self.tokenizer.get_token_type() == TokenType.KEYWORD) and (self.tokenizer.get_keyword_type() in (KeywordType.CONSTRUCTOR, KeywordType.FUNCTION, KeywordType.METHOD)):
+        while \
+        (self.tokenizer.get_token_type() == TokenType.KEYWORD) and\
+        (
+            self.tokenizer.get_keyword_type() in (KeywordType.CONSTRUCTOR, KeywordType.FUNCTION, KeywordType.METHOD)
+        ):
             self.compile_subroutine_dec()
 
         # Class ending curly brackets
@@ -145,8 +153,13 @@ class CompilationEngine:
 
         if self.tokenizer.get_cur_ident() == "static":
             var_kind = SymbolKind.STATIC
-        elif self.tokenizer.get_cur_ident() == "feild":
-            var_kind = SymbolKind.VAR
+        elif self.tokenizer.get_cur_ident() == "field":
+            var_kind = SymbolKind.FEILD
+        else:
+            raise Exception(
+                "Other than static or feild:" +  
+                self.tokenizer.get_cur_ident()
+            )
 
         # Read the next token
         self.tokenizer.has_more_tokens()
@@ -913,6 +926,7 @@ class CompilationEngine:
     # Lookup variable in symbol table
     def lookup_st(self, v_name):
         '''return variable properties'''
+        # FOR DEBUGGING
         from pprint import pprint
         pprint(self.subroutine_level_st.hash_map)
         pprint(self.class_level_st.hash_map)
@@ -922,8 +936,6 @@ class CompilationEngine:
 
         # lookup subroutine level table
         v_kind = self.subroutine_level_st.get_kind_of(v_name)
-
-        print("v_kind == SymbolKind.NONE: ", v_kind == SymbolKind.NONE)
         
         # var not found in subroutine level st
         if v_kind == SymbolKind.NONE:
@@ -936,6 +948,8 @@ class CompilationEngine:
             v_props["kind"] = v_kind
             v_props["type"] = self.class_level_st.get_type_of(v_name)
             v_props["index"] = self.class_level_st.get_index_of(v_name)
+
+            return v_props
         
         # Data found for subroutine level table
         v_props["kind"] = v_kind
