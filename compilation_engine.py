@@ -60,6 +60,8 @@ class CompilationEngine:
         self.class_level_st = SymbolTable()
         self.subroutine_level_st = SymbolTable()
 
+        # class's name
+        self.class_name = None
         # Open the output file for writing
         self.out_stream = out_path.open('w')
     
@@ -97,11 +99,14 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+            self.class_name = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                self.class_name
+            )
             self.out_stream.write("\n===DECLARED===\nclass name\n=======")
         else:
             raise AttributeError("Not a valid class name!")
-            return
         
         # Read the next token
         self.tokenizer.has_more_tokens()
@@ -242,10 +247,15 @@ class CompilationEngine:
         self.out_stream.write("<subroutineDec>\n")
         
         # Write subroutine type
-        self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+        sub_type = self.tokenizer.get_cur_ident()
+        self.write_terminal_tag(TokenType.KEYWORD, sub_type)
 
         # Reset subroutine level symbol table
         self.subroutine_level_st.reset_table()
+
+        # Insert `this`, if method
+        if sub_type == "method":
+            self.subroutine_level_st.define("this", self.class_name, SymbolKind.ARG)
 
         # Move to next token
         self.tokenizer.has_more_tokens()
