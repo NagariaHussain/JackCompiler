@@ -949,6 +949,7 @@ class CompilationEngine:
             v_props["type"] = self.class_level_st.get_type_of(v_name)
             v_props["index"] = self.class_level_st.get_index_of(v_name)
 
+            # return class level variable data
             return v_props
         
         # Data found for subroutine level table
