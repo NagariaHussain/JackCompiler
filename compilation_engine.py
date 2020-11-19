@@ -1,4 +1,5 @@
 # Import enums
+from vm_writer import VMWriter
 from type_enums import TokenType, KeywordType
 
 # Import jack tokenizer
@@ -6,6 +7,9 @@ from jack_tokenizer import JackTokenizer
 
 # Import symbol table 
 from symbol_table import SymbolKind, SymbolTable
+
+from vm_writer import VMWriter, SegmentType, ArithmeticCType
+from pathlib import Path
 
 # Supported built-in data type keywords
 data_types = {
@@ -53,7 +57,7 @@ allowed_unary_op = { "-", "~" }
 class CompilationEngine:
     '''The brain of the Jack syntax analyzer'''
     # Constructor
-    def __init__(self, tokenizer: JackTokenizer, out_path):
+    def __init__(self, tokenizer: JackTokenizer, out_path : Path):
         self.tokenizer = tokenizer
         
         # Create symbol tables
@@ -62,8 +66,12 @@ class CompilationEngine:
 
         # class's name
         self.class_name = None
+
         # Open the output file for writing
         self.out_stream = out_path.open('w')
+
+        # Create a new VM writer for writing
+        self.vm_writer = VMWriter(out_path.with_suffix(".vm"))
     
     def start_compilation(self):
         # Read the first token into memory
