@@ -254,6 +254,9 @@ class CompilationEngine:
         # Opening tag
         self.out_stream.write("<subroutineDec>\n")
         
+        # To store function parameters 
+        func_params = {}
+
         # Write subroutine type
         sub_type = self.tokenizer.get_cur_ident()
         self.write_terminal_tag(TokenType.KEYWORD, sub_type)
@@ -263,13 +266,20 @@ class CompilationEngine:
 
         # Insert `this`, if method
         if sub_type == "method":
-            self.subroutine_level_st.define("this", self.class_name, SymbolKind.ARG)
+            self.subroutine_level_st.define(
+                "this", self.class_name, SymbolKind.ARG
+            )
 
         # Move to next token
         self.tokenizer.has_more_tokens()
 
-        if self.is_valid_type() or (self.tokenizer.get_token_type() == TokenType.KEYWORD and self.tokenizer.get_keyword_type() == KeywordType.VOID):
-            self.write_terminal_tag(self.tokenizer.get_token_type(), self.tokenizer.get_cur_ident())
+        if self.is_valid_type() or \
+            (self.tokenizer.get_token_type() == TokenType.KEYWORD \
+            and self.tokenizer.get_keyword_type() == KeywordType.VOID):
+            self.write_terminal_tag(
+                self.tokenizer.get_token_type(), 
+                self.tokenizer.get_cur_ident()
+            )
         else:
             raise AssertionError("Not a valid subroutine return type!")
 
@@ -277,7 +287,12 @@ class CompilationEngine:
         self.tokenizer.has_more_tokens()
 
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            func_params["name"] = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                func_params["name"]
+            )
+
         else:
             raise AssertionError("Invalid Syntax for function name!")
         
@@ -300,11 +315,19 @@ class CompilationEngine:
         self.eat(')')
         self.write_terminal_tag(TokenType.SYMBOL, ")")
         
+        func_params["n_lcls"] = self.subroutine_level_st.get_var_count(
+                                    SymbolKind.ARG
+                                )
+        # Write function VM command
+        self.vm_writer.write_function(
+            f"{self.class_name}.{func_params['name']}",
+            func_params["n_lcls"]
+        )
+
         # Move to the next token
         self.tokenizer.has_more_tokens()
 
-        self.compile_subroutine_body()
-
+        self.compile_subroutine_body()        
         # Closing tag
         self.out_stream.write("</subroutineDec>\n")
 
@@ -379,6 +402,13 @@ class CompilationEngine:
             else:
                 raise AssertionError(
                         "Invalid variable name in parameter list!!")
+
+            self.subroutine_level_st.define(
+                var_name, var_type, var_kind
+            )
+
+            var_index = self.subroutine_level_st.get_index_of(var_name)
+
              # Write variable properties
             self.out_stream.write(
                 f"\n===DECLARED===\nkind: {var_kind}, type: {var_type}, index: {var_index}\n=======")
@@ -542,6 +572,24 @@ class CompilationEngine:
             # Write variable properties
             self.out_stream.write(
                 f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
+            
+            # Finding segment type
+            var_props["seg_type"] = None
+
+            if var_props['kind'] == SymbolKind.STATIC:
+                var_props["seg_type"] = SegmentType.STATIC
+            elif var_props['kind'] == SymbolKind.FEILD:
+                # TODO
+                var_props["seg_type"] = SegmentType.STATIC
+            elif var_props['kind'] == SymbolKind.ARG:
+                var_props["seg_type"] = SegmentType.ARG
+            elif var_props['kind'] == SymbolKind.VAR:
+                var_props["seg_type"] = SegmentType.LOCAL
+            
+            self.vm_writer.write_push(
+                var_props["seg_type"], 
+                var_props["index"])
+
         else:
             raise AssertionError("Invalid Syntax for varName!")
 

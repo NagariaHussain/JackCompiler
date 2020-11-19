@@ -56,7 +56,7 @@ class SymbolTable:
 
     def get_var_count(self, kind: SymbolKind) -> int:
         '''returns number of variables of given `kind`'''
-        return (self.kind_index[kind] + 1)
+        return (self.kind_index[kind])
 
     def get_kind_of(self, name: str) -> SymbolKind:
         '''returns the kind of the named identifier'''
