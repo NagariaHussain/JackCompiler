@@ -37,22 +37,25 @@ statement_types = {
 
 # Supported binary operations
 allowed_op = {
-    "+",
-    "-",
-    "*",
-    "/",
-    "&",
-    "&amp;",
-    "|",
-    "<",
-    "&lt;",
-    ">",
-    "&gt;",
-    "="
+    "+": ArithmeticCType.ADD,
+    "-": ArithmeticCType.SUB,
+    "*": ArithmeticCType.MULT, 
+    "/": ArithmeticCType.DIV, 
+    "&": ArithmeticCType.AND,
+    "&amp;": ArithmeticCType.AND,
+    "|": ArithmeticCType.OR,
+    "<": ArithmeticCType.LT,
+    "&lt;": ArithmeticCType.LT,
+    ">": ArithmeticCType.GT,
+    "&gt;": ArithmeticCType.GT,
+    "=": ArithmeticCType.EQ
 }
 
 # Supported unary operations
-allowed_unary_op = { "-", "~" }
+allowed_unary_op = { 
+    "-": ArithmeticCType.NEG, 
+    "~": ArithmeticCType.NOT
+}
 
 class CompilationEngine:
     '''The brain of the Jack syntax analyzer'''
@@ -574,22 +577,10 @@ class CompilationEngine:
                 f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
             
             # Finding segment type
-            var_props["seg_type"] = None
-
-            if var_props['kind'] == SymbolKind.STATIC:
-                var_props["seg_type"] = SegmentType.STATIC
-            elif var_props['kind'] == SymbolKind.FEILD:
-                # TODO
-                var_props["seg_type"] = SegmentType.STATIC
-            elif var_props['kind'] == SymbolKind.ARG:
-                var_props["seg_type"] = SegmentType.ARG
-            elif var_props['kind'] == SymbolKind.VAR:
-                var_props["seg_type"] = SegmentType.LOCAL
+            var_props["seg_type"] = self.var_t_to_segment_t(
+                                        var_props["kind"]
+                                    )
             
-            self.vm_writer.write_push(
-                var_props["seg_type"], 
-                var_props["index"])
-
         else:
             raise AssertionError("Invalid Syntax for varName!")
 
@@ -627,6 +618,10 @@ class CompilationEngine:
 
         # Move to next token
         self.tokenizer.has_more_tokens()
+
+        self.vm_writer.write_pop(
+                var_props["seg_type"], 
+                var_props["index"])
 
         self.out_stream.write("</letStatement>\n")
     
@@ -737,6 +732,11 @@ class CompilationEngine:
 
     # 'do' subroutineCall ';'
     def compile_do(self):
+        # To store first and second parts of subroutine call
+        first_part, second_part = None, None
+        # To store nArgs passed to the subroutine
+        nArgs = 0
+
         # Write opening tag
         self.out_stream.write("<doStatement>\n")
 
@@ -748,7 +748,11 @@ class CompilationEngine:
 
         # Handle subroutineCall
         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+            first_part = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.IDENTIFIER, 
+                first_part
+            )
         else:
             raise AssertionError("Not a valid subroutine/class name!!!")
         
@@ -765,9 +769,15 @@ class CompilationEngine:
 
             # Handle subroutineCall
             if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-                self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                second_part = self.tokenizer.get_cur_ident()
+                self.write_terminal_tag(
+                    TokenType.IDENTIFIER, 
+                    second_part
+                )
             else:
-                raise AssertionError("Not a valid subroutine/class name!!!")
+                raise AssertionError(
+                    "Not a valid subroutine/class name!!!"
+                )
 
             # Move to next token
             self.tokenizer.has_more_tokens()
@@ -781,7 +791,7 @@ class CompilationEngine:
         self.out_stream.write("<expressionList>\n")
         if not (self.tokenizer.get_token_type() == TokenType.SYMBOL \
             and self.tokenizer.get_symbol() == ")"):
-            self.compile_expression_list()
+            nArgs = self.compile_expression_list()
         self.out_stream.write("</expressionList>\n")
 
         self.eat(")")
@@ -796,6 +806,22 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
+        # Write method call
+        if second_part:
+            # Of some other class
+            self.vm_writer.write_call(
+                f"{first_part}.{second_part}",
+                nArgs
+            )
+        else:
+            # Of this class
+            self.vm_writer.write_call(
+                f"{self.class_name}.{first_part}",
+                nArgs
+            )
+        
+        # call-and-return contract
+        self.vm_writer.write_pop(SegmentType.TEMP, 0)
         # Write closing tag
         self.out_stream.write("</doStatement>\n")
     
@@ -813,6 +839,8 @@ class CompilationEngine:
         if self.tokenizer.get_token_type() == TokenType.SYMBOL \
             and self.tokenizer.get_symbol() == ";":
             self.write_terminal_tag(TokenType.SYMBOL, ";")
+            # the subroutine void return type
+            self.vm_writer.write_push(SegmentType.CONST, 0)
         else:
             self.compile_expression()
             self.eat(";")
@@ -821,6 +849,8 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
+        # Write return command
+        self.vm_writer.write_return()
         # Write closing tag
         self.out_stream.write("</returnStatement>\n")
 
@@ -834,14 +864,22 @@ class CompilationEngine:
         # Handle (op term)*
         while self.tokenizer.get_token_type() == TokenType.SYMBOL \
             and self.tokenizer.get_symbol() in allowed_op:
+            symbol = self.tokenizer.get_symbol()
             # Write tag for operation symbol
-            self.write_terminal_tag(TokenType.SYMBOL, self.tokenizer.get_symbol())
+            self.write_terminal_tag(
+                TokenType.SYMBOL, 
+                self.tokenizer.get_symbol())
 
             # Move to next token 
             self.tokenizer.has_more_tokens()
 
             # Compile term
             self.compile_term()
+
+            # Apply operation
+            self.vm_writer.write_arithmetic(
+                allowed_op[symbol]
+            )
         
         # Write closing tag
         self.out_stream.write("</expression>\n")
@@ -853,16 +891,41 @@ class CompilationEngine:
         self.out_stream.write("<term>\n")
         
         if self.tokenizer.get_token_type() == TokenType.INT_CONST:
-            self.write_terminal_tag(TokenType.INT_CONST, self.tokenizer.get_int_val())
+            self.write_terminal_tag(
+                TokenType.INT_CONST, 
+                self.tokenizer.get_int_val()
+            )
+            self.vm_writer.write_push(
+                SegmentType.CONST, 
+                self.tokenizer.get_int_val()
+            )
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.STRING_CONST:
-            self.write_terminal_tag(TokenType.STRING_CONST, self.tokenizer.get_string_val())
+            self.write_terminal_tag(
+                TokenType.STRING_CONST, 
+                self.tokenizer.get_string_val()
+            )
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.KEYWORD \
             and self.tokenizer.get_keyword_type() in keyword_constants:
-            self.write_terminal_tag(TokenType.KEYWORD, self.tokenizer.get_cur_ident())
+            # keyword constant
+            kc = self.tokenizer.get_cur_ident()
+            self.write_terminal_tag(
+                TokenType.KEYWORD, 
+                kc
+            )
+
+            if kc == "null" or kc == "false":
+                # push const 0
+                self.vm_writer.write_push(SegmentType.CONST, 0)
+            
+            elif kc == "true":
+                # push const -1
+                self.vm_writer.write_push(SegmentType.CONST, 1)
+                self.vm_writer.write_arithmetic(ArithmeticCType.NEG)
+
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
@@ -878,6 +941,10 @@ class CompilationEngine:
                 self.out_stream.write(
                     f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
 
+                self.vm_writer.write_push(
+                    self.var_t_to_segment_t(var_props['kind']),
+                    var_props['index']
+                )
 
             # Move to next token
             self.tokenizer.has_more_tokens()
@@ -898,7 +965,8 @@ class CompilationEngine:
                     self.tokenizer.has_more_tokens()
 
                 # Handle subroutineCall
-                elif self.tokenizer.get_symbol() == "(" or self.tokenizer.get_symbol() == ".":
+                elif self.tokenizer.get_symbol() == "(" \
+                    or self.tokenizer.get_symbol() == ".":
                     # Is a method call
                     if self.tokenizer.get_symbol() == ".":
                         self.write_terminal_tag(TokenType.SYMBOL, ".")
@@ -907,9 +975,14 @@ class CompilationEngine:
 
                         # Handle subroutineCall
                         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
-                            self.write_terminal_tag(TokenType.IDENTIFIER, self.tokenizer.get_cur_ident())
+                            self.write_terminal_tag(
+                                TokenType.IDENTIFIER, 
+                                self.tokenizer.get_cur_ident()
+                            )
                         else:
-                            raise AssertionError("Not a valid subroutine/class name!!!")
+                            raise AssertionError(
+                                "Not a valid subroutine/class name!!!"
+                            )
                         
                         # Move to next token
                         self.tokenizer.has_more_tokens()
@@ -921,7 +994,8 @@ class CompilationEngine:
                     self.tokenizer.has_more_tokens()
 
                     self.out_stream.write("<expressionList>\n")
-                    if not (self.tokenizer.get_token_type() == TokenType.SYMBOL and self.tokenizer.get_symbol() == ")"):
+                    if not (self.tokenizer.get_token_type() == TokenType.SYMBOL \
+                        and self.tokenizer.get_symbol() == ")"):
                         self.compile_expression_list()
                     self.out_stream.write("</expressionList>\n")
 
@@ -945,11 +1019,20 @@ class CompilationEngine:
                 self.tokenizer.has_more_tokens()
             # Handle unaryOp term
             elif self.tokenizer.get_symbol() in allowed_unary_op:
-                self.write_terminal_tag(TokenType.SYMBOL, self.tokenizer.get_symbol())
+                unary_op = self.tokenizer.get_symbol()
+                self.write_terminal_tag(
+                    TokenType.SYMBOL, 
+                    self.tokenizer.get_symbol()
+                )
 
                 self.tokenizer.has_more_tokens()
-
                 self.compile_term()
+
+                self.vm_writer.write_arithmetic(
+                    allowed_unary_op[unary_op]
+                )
+
+
             else:
                 raise AssertionError("( or unary Op expected!!")
 
@@ -958,12 +1041,16 @@ class CompilationEngine:
     # expression (',' expression)*
     def compile_expression_list(self):
         self.compile_expression()
+        arg_count = 1
 
         while (self.tokenizer.get_token_type() == TokenType.SYMBOL) \
             and (self.tokenizer.get_symbol() == ","):
             self.write_terminal_tag(TokenType.SYMBOL, ",")
             self.tokenizer.has_more_tokens()
             self.compile_expression()
+            arg_count += 1
+
+        return arg_count
 
     # eat the given string, else raise error
     def eat(self, string):
@@ -1025,6 +1112,18 @@ class CompilationEngine:
 
         return v_props
 
+    def var_t_to_segment_t(self, v_kind: SymbolKind) -> SegmentType:
+        if v_kind == SymbolKind.STATIC:
+            return SegmentType.STATIC
+        elif v_kind == SymbolKind.FEILD:
+            # TODO
+            return SegmentType.STATIC
+        elif v_kind == SymbolKind.ARG:
+            return SegmentType.ARG
+        elif v_kind == SymbolKind.VAR:
+            return SegmentType.LOCAL
+        else:
+            raise AssertionError("No segment kind for given v_kind!!")
         
 
 

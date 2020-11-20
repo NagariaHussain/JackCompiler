@@ -40,6 +40,8 @@ class ArithmeticCType(Enum):
     AND = 6
     OR  = 7
     NOT = 8
+    MULT = 9
+    DIV = 10
 
 def arithmetic_ct_to_string(t: ArithmeticCType) -> str:
     if t == ArithmeticCType.ADD:
@@ -60,6 +62,10 @@ def arithmetic_ct_to_string(t: ArithmeticCType) -> str:
         return "or"
     if t == ArithmeticCType.NOT:
         return "not"
+    if t == ArithmeticCType.MULT:
+        return "call Math.multiply 2"
+    if t == ArithmeticCType.DIV:
+        return "call Math.divide 2"
 
 class VMWriter:
     def __init__(self, file_path: Path) -> None:
@@ -113,6 +119,8 @@ class VMWriter:
 
     def write_function(self, name: str, nLocals: int) -> None:
         '''writes a VM `function` command'''
+        self.write_comment("\n")
+        self.write_comment(f"FUNCTION: {name}")
         self.write_command(
             "function",
             name,
