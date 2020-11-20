@@ -75,7 +75,27 @@ class CompilationEngine:
 
         # Create a new VM writer for writing
         self.vm_writer = VMWriter(out_path.with_suffix(".vm"))
+
+        # For generating labels
+        self.label_count = {
+            "if": 0,
+            "while": 0
+        }
     
+    def get_if_labels(self):
+        self.label_count["if"] += 1
+        return (
+            f"LABEL_IF_{self.label_count['if'] - 1}_1", 
+            f"LABEL_IF_{self.label_count['if'] - 1}_2"
+        )
+    
+    def get_while_labels(self):
+        self.label_count["while"] += 1
+        return (
+            f"LABEL_WHILE_{self.label_count['while'] - 1}_1", 
+            f"LABEL_WHILE_{self.label_count['while'] - 1}_2"
+        )
+
     def start_compilation(self):
         # Read the first token into memory
         self.tokenizer.has_more_tokens()
@@ -628,8 +648,12 @@ class CompilationEngine:
     # 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     def compile_if(self):
         self.out_stream.write("<ifStatement>\n")
+        self.vm_writer.write_comment("if statement")
 
         self.write_terminal_tag(TokenType.KEYWORD, "if")
+
+        # get the next labels
+        L1, L2 = self.get_if_labels()
 
         # Move to next token
         self.tokenizer.has_more_tokens()
@@ -640,6 +664,7 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
+        # write code for the expression
         self.compile_expression()
 
         self.eat(")")
@@ -647,6 +672,11 @@ class CompilationEngine:
 
         # Move to next token
         self.tokenizer.has_more_tokens()
+
+        # not, the condition inside if
+        self.vm_writer.write_arithmetic(ArithmeticCType.NOT)
+
+        self.vm_writer.write_if(L1)
 
         self.eat("{")
         self.write_terminal_tag(TokenType.SYMBOL, "{")
@@ -656,6 +686,10 @@ class CompilationEngine:
 
         # Compile if-block body
         self.compile_statements()
+
+        self.vm_writer.write_goto(L2)
+
+        self.vm_writer.write_label(L1)
 
         self.eat("}")
         self.write_terminal_tag(TokenType.SYMBOL, "}")
@@ -686,6 +720,8 @@ class CompilationEngine:
             # Move to next token
             self.tokenizer.has_more_tokens()
 
+        self.vm_writer.write_label(L2)
+
         # Write closing tag
         self.out_stream.write("</ifStatement>\n")
     
@@ -694,6 +730,9 @@ class CompilationEngine:
         self.out_stream.write("<whileStatement>\n")
 
         self.write_terminal_tag(TokenType.KEYWORD, "while")
+        L1, L2 = self.get_while_labels()
+
+        self.vm_writer.write_label(L1)
 
         # Move to next token
         self.tokenizer.has_more_tokens()
@@ -709,6 +748,8 @@ class CompilationEngine:
         self.eat(")")
         self.write_terminal_tag(TokenType.SYMBOL, ")")
 
+        self.vm_writer.write_arithmetic(ArithmeticCType.NOT)
+        self.vm_writer.write_if(L2)
         # Move to next token
         self.tokenizer.has_more_tokens()
 
@@ -718,7 +759,7 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
-        # Compile if-block body
+        # Compile block body
         self.compile_statements()
 
         self.eat("}")
@@ -726,7 +767,8 @@ class CompilationEngine:
 
         # Move to next token
         self.tokenizer.has_more_tokens()
-
+        self.vm_writer.write_goto(L1)
+        self.vm_writer.write_label(L2)
         # Write closing tag
         self.out_stream.write("</whileStatement>\n")
 
