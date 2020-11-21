@@ -70,6 +70,7 @@ class CompilationEngine:
         # class's name
         self.class_name = None
         self.func_name = None
+        self.sub_type = None
 
         # Open the output file for writing
         self.out_stream = out_path.open('w')
@@ -282,14 +283,14 @@ class CompilationEngine:
         func_params = {}
 
         # Write subroutine type
-        sub_type = self.tokenizer.get_cur_ident()
-        self.write_terminal_tag(TokenType.KEYWORD, sub_type)
+        self.sub_type = self.tokenizer.get_cur_ident()
+        self.write_terminal_tag(TokenType.KEYWORD, self.sub_type)
 
         # Reset subroutine level symbol table
         self.subroutine_level_st.reset_table()
 
         # Insert `this`, if method
-        if sub_type == "method":
+        if self.sub_type == "method":
             self.subroutine_level_st.define(
                 "this", self.class_name, SymbolKind.ARG
             )
@@ -339,15 +340,13 @@ class CompilationEngine:
         self.eat(')')
         self.write_terminal_tag(TokenType.SYMBOL, ")")
         
-        
-
         # Write function VM command
         self.func_name = func_params['name']
 
         # Move to the next token
         self.tokenizer.has_more_tokens()
+        self.compile_subroutine_body()    
 
-        self.compile_subroutine_body()        
         # Closing tag
         self.out_stream.write("</subroutineDec>\n")
 
@@ -457,13 +456,37 @@ class CompilationEngine:
         # Get number of local variables 
         # for the current compiling function
         nVars = self.subroutine_level_st.get_var_count(
-                                    SymbolKind.VAR)
+                                    SymbolKind.VAR
+                                )
 
         # Write function     
         self.vm_writer.write_function(
                 f"{self.class_name}.{self.func_name}",
-                nVars)
-                
+                nVars
+            )
+        
+        if self.sub_type == "constructor":
+            nFeilds = self.class_level_st.get_var_count(
+                SymbolKind.FEILD
+            )
+
+            # write "push constant nFeilds"
+            self.vm_writer.write_push(
+                SegmentType.CONST, 
+                nFeilds
+            )
+
+            self.vm_writer.write_call(
+                "Memory.alloc",
+                1
+            )
+
+            self.vm_writer.write_pop(
+                SegmentType.POINTER,
+                0
+            )
+
+
         # Handle statements
         self.compile_statements()
 
@@ -976,6 +999,13 @@ class CompilationEngine:
                 self.vm_writer.write_push(SegmentType.CONST, 1)
                 self.vm_writer.write_arithmetic(ArithmeticCType.NEG)
 
+            elif kc == "this":
+                # push pointer 0
+                self.vm_writer.write_push(
+                    SegmentType.POINTER,
+                    0
+                )
+
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
@@ -1180,13 +1210,12 @@ class CompilationEngine:
     def var_t_to_segment_t(self, v_kind: SymbolKind) -> SegmentType:
         if v_kind == SymbolKind.STATIC:
             return SegmentType.STATIC
-        elif v_kind == SymbolKind.FEILD:
-            # TODO
-            return SegmentType.STATIC
         elif v_kind == SymbolKind.ARG:
             return SegmentType.ARG
         elif v_kind == SymbolKind.VAR:
             return SegmentType.LOCAL
+        elif v_kind == SymbolKind.FEILD:
+            return SegmentType.THIS
         else:
             raise AssertionError("No segment kind for given v_kind!!")
         
