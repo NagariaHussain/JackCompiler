@@ -69,6 +69,7 @@ class CompilationEngine:
 
         # class's name
         self.class_name = None
+        self.func_name = None
 
         # Open the output file for writing
         self.out_stream = out_path.open('w')
@@ -338,14 +339,10 @@ class CompilationEngine:
         self.eat(')')
         self.write_terminal_tag(TokenType.SYMBOL, ")")
         
-        func_params["n_lcls"] = self.subroutine_level_st.get_var_count(
-                                    SymbolKind.ARG
-                                )
+        
+
         # Write function VM command
-        self.vm_writer.write_function(
-            f"{self.class_name}.{func_params['name']}",
-            func_params["n_lcls"]
-        )
+        self.func_name = func_params['name']
 
         # Move to the next token
         self.tokenizer.has_more_tokens()
@@ -453,9 +450,20 @@ class CompilationEngine:
         # Handle variable declarations
         while self.tokenizer.get_token_type() == TokenType.KEYWORD  \
         and self.tokenizer.get_keyword_type() == KeywordType.VAR:
+            
             # Current token is the 'var' keyword
             self.compile_var_dec()
+            
+        # Get number of local variables 
+        # for the current compiling function
+        nVars = self.subroutine_level_st.get_var_count(
+                                    SymbolKind.VAR)
 
+        # Write function     
+        self.vm_writer.write_function(
+                f"{self.class_name}.{self.func_name}",
+                nVars)
+                
         # Handle statements
         self.compile_statements()
 
