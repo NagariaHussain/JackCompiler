@@ -971,22 +971,15 @@ class CompilationEngine:
             self.tokenizer.has_more_tokens()
         
         elif self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+            first_part, second_part = None, None
+            nArgs = 0
             var_name = self.tokenizer.get_cur_ident()
+            first_part = var_name
             var_props = self.lookup_st(var_name)
 
             self.write_terminal_tag(
                 TokenType.IDENTIFIER, 
                 var_name)
-
-            if var_props:
-                # Write variable properties
-                self.out_stream.write(
-                    f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
-
-                self.vm_writer.write_push(
-                    self.var_t_to_segment_t(var_props['kind']),
-                    var_props['index']
-                )
 
             # Move to next token
             self.tokenizer.has_more_tokens()
@@ -1017,9 +1010,10 @@ class CompilationEngine:
 
                         # Handle subroutineCall
                         if self.tokenizer.get_token_type() == TokenType.IDENTIFIER:
+                            second_part = self.tokenizer.get_cur_ident()
                             self.write_terminal_tag(
                                 TokenType.IDENTIFIER, 
-                                self.tokenizer.get_cur_ident()
+                                second_part
                             )
                         else:
                             raise AssertionError(
@@ -1034,11 +1028,10 @@ class CompilationEngine:
 
                     # Move to next token
                     self.tokenizer.has_more_tokens()
-
                     self.out_stream.write("<expressionList>\n")
                     if not (self.tokenizer.get_token_type() == TokenType.SYMBOL \
                         and self.tokenizer.get_symbol() == ")"):
-                        self.compile_expression_list()
+                        nArgs = self.compile_expression_list()
                     self.out_stream.write("</expressionList>\n")
 
                     self.eat(")")
@@ -1046,6 +1039,29 @@ class CompilationEngine:
 
                     # Move to next token
                     self.tokenizer.has_more_tokens()
+
+            if var_props:
+                # Write variable properties
+                self.out_stream.write(
+                    f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
+
+                self.vm_writer.write_push(
+                    self.var_t_to_segment_t(var_props['kind']),
+                    var_props['index']
+                ) 
+            else:
+                if second_part:
+                    # Of some other class
+                    self.vm_writer.write_call(
+                    f"{first_part}.{second_part}",
+                    nArgs
+                    )
+                else:
+                    # Of this class
+                    self.vm_writer.write_call(
+                    f"{self.class_name}.{first_part}",
+                    nArgs
+                    )  
         
         elif self.tokenizer.get_token_type() == TokenType.SYMBOL:
             # Handle '(' expression ')'
@@ -1073,7 +1089,6 @@ class CompilationEngine:
                 self.vm_writer.write_arithmetic(
                     allowed_unary_op[unary_op]
                 )
-
 
             else:
                 raise AssertionError("( or unary Op expected!!")
