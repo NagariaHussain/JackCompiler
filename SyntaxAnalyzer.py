@@ -16,7 +16,10 @@ if in_path.is_file():
     # Initialize tokenizer
     tokenizer = JackTokenizer(in_path)
     # Initialize compilation engine
-    compilationEngine = CompilationEngine(tokenizer, in_path.with_suffix(".xml"))
+    compilationEngine = CompilationEngine(
+                tokenizer, 
+                in_path.with_suffix(".xml")
+            )
 
     # Start compilation
     compilationEngine.start_compilation()
@@ -28,7 +31,10 @@ elif in_path.is_dir():
             # Compile every jack file
             if item.suffix == ".jack":
                 tokenizer = JackTokenizer(item)
-                ci = CompilationEngine(tokenizer, item.with_suffix(".xml"))
+                ci = CompilationEngine(
+                    tokenizer, 
+                    item.with_suffix(".xml")
+                )
                 ci.start_compilation()
 
 

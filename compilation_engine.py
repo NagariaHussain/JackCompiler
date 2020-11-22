@@ -625,6 +625,9 @@ class CompilationEngine:
 
         self.write_terminal_tag(TokenType.KEYWORD, "let")
 
+        # Is Array?
+        is_array_access = False
+
         # Move to next token
         self.tokenizer.has_more_tokens()
 
@@ -653,6 +656,14 @@ class CompilationEngine:
         # Optional bracket syntax
         if self.tokenizer.get_token_type() == TokenType.SYMBOL \
         and self.tokenizer.get_symbol() == "[":
+            is_array_access = True
+
+            # push arr
+            self.vm_writer.write_push(
+                self.var_t_to_segment_t(var_props["kind"]),
+                var_props["index"]
+            )
+
             self.write_terminal_tag(TokenType.SYMBOL, "[")
 
             # Move to next token
@@ -663,6 +674,9 @@ class CompilationEngine:
 
             self.eat("]")
             self.write_terminal_tag(TokenType.SYMBOL, "]")
+
+            # add
+            self.vm_writer.write_arithmetic(ArithmeticCType.ADD)
 
             # Move to the next token
             self.tokenizer.has_more_tokens()
@@ -682,9 +696,35 @@ class CompilationEngine:
         # Move to next token
         self.tokenizer.has_more_tokens()
 
-        self.vm_writer.write_pop(
-                var_props["seg_type"], 
-                var_props["index"])
+        if not is_array_access:
+            self.vm_writer.write_pop(
+                    var_props["seg_type"], 
+                    var_props["index"])
+        else:
+            # pop temp 0
+            self.vm_writer.write_pop(
+                SegmentType.TEMP,
+                0
+            )
+
+            # pop pointer 1
+            self.vm_writer.write_pop(
+                SegmentType.POINTER,
+                1
+            )
+
+            # push temp 0
+            self.vm_writer.write_push(
+                SegmentType.TEMP,
+                0
+            )
+
+            # pop that 0
+            self.vm_writer.write_pop(
+                SegmentType.THAT,
+                0
+            )
+
 
         self.out_stream.write("</letStatement>\n")
     
@@ -1068,6 +1108,21 @@ class CompilationEngine:
                     self.eat(']')
                     self.write_terminal_tag(TokenType.SYMBOL, "]")
 
+                    # add
+                    self.vm_writer.write_arithmetic(ArithmeticCType.ADD)
+                    
+                    # pop pointer 1
+                    self.vm_writer.write_pop(
+                        SegmentType.POINTER,
+                        1
+                    )
+
+                    # push that 0
+                    self.vm_writer.write_push(
+                        SegmentType.THAT, 
+                        0
+                    )
+
                     # Move to next token
                     self.tokenizer.has_more_tokens()
 
@@ -1162,7 +1217,6 @@ class CompilationEngine:
                 self.vm_writer.write_arithmetic(
                     allowed_unary_op[unary_op]
                 )
-
             else:
                 raise AssertionError("( or unary Op expected!!")
 
