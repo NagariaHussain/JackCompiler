@@ -486,6 +486,18 @@ class CompilationEngine:
                 0
             )
 
+        elif self.sub_type == "method":
+            # push argument 0
+            self.vm_writer.write_push(
+                SegmentType.ARG,
+                0
+            )
+
+            # pop pointer 0
+            self.vm_writer.write_pop(
+                SegmentType.POINTER,
+                0
+            )
 
         # Handle statements
         self.compile_statements()

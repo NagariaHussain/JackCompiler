@@ -119,8 +119,6 @@ class VMWriter:
 
     def write_function(self, name: str, nLocals: int) -> None:
         '''writes a VM `function` command'''
-        self.write_comment("\n")
-        self.write_comment(f"FUNCTION: {name}")
         self.write_command(
             "function",
             name,
@@ -130,6 +128,7 @@ class VMWriter:
     def write_return(self) -> None:
         '''writes a VM `return` command'''
         self.write_command("return")
+        self.out_stream.write("\n--------------\n")
     
     def write_command(self, *words) -> None:
         '''helper method to write command to vm file'''
