@@ -829,6 +829,14 @@ class CompilationEngine:
         else:
             raise AssertionError("Not a valid subroutine/class name!!!")
         
+        var_props = self.lookup_st(first_part)
+
+        if var_props:
+            self.vm_writer.write_push(
+                self.var_t_to_segment_t(var_props["kind"]),
+                var_props["index"]
+            )
+            
         # Move to next token
         self.tokenizer.has_more_tokens()
 
@@ -878,23 +886,31 @@ class CompilationEngine:
 
         # Move to next token
         self.tokenizer.has_more_tokens()
-
-        # Write method call
-        if second_part:
-            # Of some other class
-            self.vm_writer.write_call(
-                f"{first_part}.{second_part}",
-                nArgs
-            )
+        
+        if var_props:
+            if second_part:
+                self.vm_writer.write_call(
+                    f"{var_props['type']}.{second_part}",
+                    nArgs + 1
+                )
         else:
-            # Of this class
-            self.vm_writer.write_call(
-                f"{self.class_name}.{first_part}",
-                nArgs
-            )
+            # Write method call
+            if second_part:
+                # Of some other class
+                self.vm_writer.write_call(
+                    f"{first_part}.{second_part}",
+                    nArgs
+                )
+            else:
+                # Of this class
+                self.vm_writer.write_call(
+                    f"{self.class_name}.{first_part}",
+                    nArgs
+                )
         
         # call-and-return contract
         self.vm_writer.write_pop(SegmentType.TEMP, 0)
+
         # Write closing tag
         self.out_stream.write("</doStatement>\n")
     
@@ -1019,6 +1035,12 @@ class CompilationEngine:
                 TokenType.IDENTIFIER, 
                 var_name)
 
+            if var_props:
+                self.vm_writer.write_push(
+                    self.var_t_to_segment_t(var_props["kind"]),
+                    var_props["index"]
+                )
+
             # Move to next token
             self.tokenizer.has_more_tokens()
 
@@ -1079,14 +1101,15 @@ class CompilationEngine:
                     self.tokenizer.has_more_tokens()
 
             if var_props:
-                # Write variable properties
-                self.out_stream.write(
-                    f"\n===USED===\nkind: {var_props['kind']}, type: {var_props['type']}, index: {var_props['index']}\n=======")
-
-                self.vm_writer.write_push(
-                    self.var_t_to_segment_t(var_props['kind']),
-                    var_props['index']
-                ) 
+                print("Looked up: ", var_name)
+                # Is it a method call?
+                if second_part:
+                    # Of some other class
+                    self.vm_writer.write_call(
+                        f"{var_props['type']}.{second_part}",
+                        nArgs + 1
+                    )
+            # This is no variable with given name        
             else:
                 if second_part:
                     # Of some other class
